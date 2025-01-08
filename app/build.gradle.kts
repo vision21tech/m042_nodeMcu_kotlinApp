@@ -48,6 +48,8 @@ android {
     }
 }
 
+
+
 dependencies {
     implementation(fileTree(mapOf("dir" to "libs" , "include" to listOf("*.jar"))))
     implementation(project(":androidarduinosketchuploader"))
@@ -57,7 +59,9 @@ dependencies {
     implementation("androidx.constraintlayout:constraintlayout:2.1.4")
     implementation("androidx.navigation:navigation-fragment-ktx:2.7.6")
     implementation("androidx.navigation:navigation-ui-ktx:2.7.6")
-    implementation("com.github.felHR85:UsbSerial:6.1.0")
+    // https://mvnrepository.com/artifact/com.github.felHR85/UsbSerial
+    implementation("com.github.felHR85:UsbSerial:6.0.6")
+
     implementation("org.java-websocket:Java-WebSocket:1.5.2")
     implementation("org.jetbrains.kotlin:kotlin-stdlib")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.3.0")

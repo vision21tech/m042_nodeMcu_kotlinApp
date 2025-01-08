@@ -241,7 +241,7 @@ class MainActivity : AppCompatActivity() {
                     //Log.d("usbDevices", usbDevices.toString())
                     usbStatus = if (usbDevices.isEmpty()) {
                         UsbConnectState.DISCONNECTED
-                    } else {
+                    } else
                         UsbConnectState.CONNECT
                     }
                     //Log.d("usbStatus", usbStatus.toString())
@@ -311,7 +311,11 @@ class MainActivity : AppCompatActivity() {
                 sendMessageToClients(dd.toString())
                 //println("전송전--------------")
                 fun sendPostRequest(url: String, request: String, callback: (Boolean) -> Unit) {
-                    val client = OkHttpClient()
+                    val client = OkHttpClient.Builder()
+                        .connectTimeout(600, TimeUnit.SECONDS) // 연결 타임아웃 설정 (10초)
+                        .readTimeout(600, TimeUnit.SECONDS)    // 읽기 타임아웃 설정 (30초)
+                        .writeTimeout(600, TimeUnit.SECONDS)   // 쓰기 타임아웃 설정 (15초)
+                        .build()
                     val body = RequestBody.create("application/json".toMediaTypeOrNull(), request)
                     val request = Request.Builder()
                         .url(url)
@@ -337,10 +341,10 @@ class MainActivity : AppCompatActivity() {
                                 val responseData = responseBody.string() // ResponseBody를 문자열로 변환
                                 val jsonData = JSONObject(responseData)
                                 val data = jsonData.optString("data")
-                                /*println("------------------------------")
+                                println("------------------------------")
                                 println("서버 응답: $responseData")
                                 println("data 값: $data")
-                                println("----------------------------")*/
+                                println("----------------------------")
                                 val decodeByte: ByteArray = Base64.getDecoder().decode(data)
                                 bytedata = decodeByte;
                                 val decodeString = String(decodeByte)
@@ -398,8 +402,9 @@ class MainActivity : AppCompatActivity() {
                 }
                 // TODO: 컴파일서버 주소
                 // 아두이노 백본 주소
-                // ip 주소
-                val responseComp = sendPostRequest("http://vision21tech.iptime.org:5000/api/build", data["params"].toString()){
+                // ip 주소 (기존 : http://vision21tech.iptime.org:5000/api/build) (192.168.35.157)
+                println(data["params"].toString())
+                val responseComp = sendPostRequest("http://192.168.0.151:5000/api/build", data["params"].toString()){
                         success ->
                     if (!success) {
                         println("서버 응답: 실패")
@@ -446,7 +451,28 @@ class MainActivity : AppCompatActivity() {
                                     ).show()
                                 } else {
                                     deviceKeyName = keySelect
-                                    uploadHex(param)
+                                    if(uploadHex(param)){
+                                        val message3 = "\r\n\u001b[업로드가 완료 되었습니다.\r\n\r\n"
+
+                                        val params3 = JSONObject().apply {
+                                            put("message", message3)
+                                        }
+                                        val res3 = JSONObject().apply {
+                                            put("jsonrpc", "2.0")
+                                            put("method", "uploadStdout")
+                                            put("params", params3)
+                                        }
+                                        CoroutineScope(Dispatchers.IO).launch {
+                                            delay(3000) // 1초 딜레이
+                                            sendMessageToClients(res3.toString())
+                                        }
+
+                                        val res4 = JSONObject().apply {
+                                            put("jsonrpc", "2.0")
+                                            put("method", "uploadSuccess")
+                                        }
+                                        sendMessageToClients(res4.toString())
+                                    }
                                     uploadSuccess = true
                                 }
                             }
@@ -455,28 +481,28 @@ class MainActivity : AppCompatActivity() {
                         } catch (e: Exception) {
                             Log.e("시리얼", "$e")
                         }
-                        if(uploadSuccess){
-                            val message3 = "\r\n\u001b[업로드가 완료 되었습니다.\r\n\r\n"
-
-                            val params3 = JSONObject().apply {
-                                put("message", message3)
-                            }
-                            val res3 = JSONObject().apply {
-                                put("jsonrpc", "2.0")
-                                put("method", "uploadStdout")
-                                put("params", params3)
-                            }
-                            CoroutineScope(Dispatchers.IO).launch {
-                                delay(3000) // 1초 딜레이
-                                sendMessageToClients(res3.toString())
-                            }
-
-                            val res4 = JSONObject().apply {
-                                put("jsonrpc", "2.0")
-                                put("method", "uploadSuccess")
-                            }
-                            sendMessageToClients(res4.toString())
-                        }
+//                        if(uploadSuccess){
+//                            val message3 = "\r\n\u001b[업로드가 완료 되었습니다.\r\n\r\n"
+//
+//                            val params3 = JSONObject().apply {
+//                                put("message", message3)
+//                            }
+//                            val res3 = JSONObject().apply {
+//                                put("jsonrpc", "2.0")
+//                                put("method", "uploadStdout")
+//                                put("params", params3)
+//                            }
+//                            CoroutineScope(Dispatchers.IO).launch {
+//                                delay(3000) // 1초 딜레이
+//                                sendMessageToClients(res3.toString())
+//                            }
+//
+//                            val res4 = JSONObject().apply {
+//                                put("jsonrpc", "2.0")
+//                                put("method", "uploadSuccess")
+//                            }
+//                            sendMessageToClients(res4.toString())
+//                        }
 
                     }
 
@@ -556,9 +582,9 @@ class MainActivity : AppCompatActivity() {
                 webSocketClient.connectToWebSocket()
             }*/
             launch {
-                    CoroutineScope(Dispatchers.IO).launch {
-                        delay(1000) // 1초 딜레이
-                        server.start()
+                CoroutineScope(Dispatchers.IO).launch {
+                    delay(1000) // 1초 딜레이
+                    server.start()
 
                 }
             }
@@ -611,8 +637,8 @@ class MainActivity : AppCompatActivity() {
         }
 
         //ip 주소
-        // 웹뷰 로드 코드
-        webView.loadUrl("http://vision21tech.iptime.org:8601")
+        // 웹뷰 로드 코드 (기존 http://vision21tech.iptime.org:8601)
+        webView.loadUrl("https://hz9p8gt9-8601.asse.devtunnels.ms/")
         webView.canGoBack()
     }
     private fun checkStorage() {
@@ -654,7 +680,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     // 업로드 함수
-    fun uploadHex(param: JSONObject) {
+    fun uploadHex(param: JSONObject): Boolean {
         try {
             if (param["board_type"].equals("nodemcu")) {
                 val manager = getSystemService(USB_SERVICE) as UsbManager
@@ -781,8 +807,9 @@ class MainActivity : AppCompatActivity() {
             }
         } catch (e: Exception) {
             Log.e("시리얼", "$e")
+            return false;
         }
-
+        return true;
     }
 
     override fun onRequestPermissionsResult(
